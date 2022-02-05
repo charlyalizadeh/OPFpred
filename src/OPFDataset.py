@@ -13,7 +13,7 @@ class OPFDataset:
         self.non_features = ['instance_name', 'merge_treshold',
                              'origin_dec_type', 'origin_nb_added_edges',
                              'solver.solving_time', 'dec_type', 'nb_added_edges']
-        self.features = list(self.df.drop(self.non_features + ['target'], axis=1).colmuns)
+        self.features = list(self.df.drop(self.non_features + ['target'], axis=1).columns)
         self.OPF_features = ['instance_name', 'graph.degree_max', 'graph.degree_mean',
                              'graph.degree_min', 'graph.degree_var',
                              'graph.density', 'graph.diameter',
