@@ -13,8 +13,8 @@ class OPFDataset:
         self.non_features = ['instance_name', 'merge_treshold',
                              'origin_dec_type', 'origin_nb_added_edges',
                              'solver.solving_time', 'dec_type', 'nb_added_edges']
-        self.features = list(self.df.drop(self.non_features + ['target'], axis=1).columns)
-        self.OPF_features = ['instance_name', 'graph.degree_max', 'graph.degree_mean',
+        self.features = list(self.df.drop(self.non_features + ['target'], axis=1, errors='ignore').columns)
+        self.OPF_features = ['graph.degree_max', 'graph.degree_mean',
                              'graph.degree_min', 'graph.degree_var',
                              'graph.density', 'graph.diameter',
                              'graph.global_clustering_coefficient', 'graph.ne', 'graph.nv',
@@ -72,11 +72,6 @@ class OPFDataset:
             folds = np.concatenate((folds, np.array([[train, test]])), axis=0)
         return folds
 
-    def setup_for_fit(self):
-        self.df.drop(['merge_treshold', 'origin_nb_added_edges',
-                      'origin_dec_type', 'solver.solving_time',
-                      'nb_added_edges', 'dec_type', 'solver.solving_time'],
-                     axis=1, inplace=True)
 
     def move_columns_end(self, columns):
         other_columns = self.df.drop(columns, axis=1).columns
@@ -100,8 +95,22 @@ class OPFDataset:
     def fit_scaler(self, scaler):
         scaler.fit(self.df[self.features])
 
+
+    def remove_non_features(self):
+        self._remove_features(self.non_features)
+
     def remove_OPF_features(self):
-        self.df.drop(self.OPF_features, axis=1, inplace=True)
+        self._remove_features(self.OPF_features)
+
+    def _remove_features(self, features):
+        self.df.drop(features, axis=1, inplace=True, errors='ignore')
+        for f in features:
+            try:
+                self.features.remove(f)
+            except ValueError:
+                continue
+
+
 
     def __getitem__(self, item):
         return self.df[item]
