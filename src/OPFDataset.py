@@ -6,6 +6,10 @@ import random
 
 class OPFDataset:
     def __init__(self, data='./data/OPFDataset.csv'):
+        if isinstance(data, str):
+            self.df = pd.read_csv(data)
+        elif isinstance(data, pd.DataFrame):
+            self.df = data.copy()
         self.non_features = ['instance_name', 'merge_treshold',
                              'origin_dec_type', 'origin_nb_added_edges',
                              'solver.solving_time', 'dec_type', 'nb_added_edges']
@@ -18,10 +22,6 @@ class OPFDataset:
                              'loads_imag.median', 'loads_imag.min', 'loads_imag.var',
                              'loads_real.max', 'loads_real.mean', 'loads_real.median',
                              'loads_real.min', 'loads_real.var']
-        if isinstance(data, str):
-            self.df = pd.read_csv(data)
-        elif isinstance(data, pd.DataFrame):
-            self.df = data.copy()
 
     def categorize(self, treshold=-0.4, per_instance=False):
         self.df['category'] = self.df['target'].apply(lambda x: 0 if x > treshold else 1)
