@@ -10,6 +10,14 @@ class OPFDataset:
                              'origin_dec_type', 'origin_nb_added_edges',
                              'solver.solving_time', 'dec_type', 'nb_added_edges']
         self.features = list(self.df.drop(self.non_features + ['target'], axis=1).colmuns)
+        self.OPF_features = ['instance_name', 'graph.degree_max', 'graph.degree_mean',
+                             'graph.degree_min', 'graph.degree_var',
+                             'graph.density', 'graph.diameter',
+                             'graph.global_clustering_coefficient', 'graph.ne', 'graph.nv',
+                             'loads_imag.max', 'loads_imag.mean',
+                             'loads_imag.median', 'loads_imag.min', 'loads_imag.var',
+                             'loads_real.max', 'loads_real.mean', 'loads_real.median',
+                             'loads_real.min', 'loads_real.var']
         if isinstance(data, str):
             self.df = pd.read_csv(data)
         elif isinstance(data, pd.DataFrame):
@@ -91,6 +99,9 @@ class OPFDataset:
 
     def fit_scaler(self, scaler):
         scaler.fit(self.df[self.features])
+
+    def remove_OPF_features(self):
+        self.df.drop(self.OPF_features, axis=1, inplace=True)
 
     def __getitem__(self, item):
         return self.df[item]
