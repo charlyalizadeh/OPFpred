@@ -1,24 +1,20 @@
 import copy
 
 
-def mergeSort(arr):
+def merge_sort(arr):
     n = len(arr)
     arr = copy.deepcopy(arr)
-    temp_arr = [0]*n
-    return _mergeSort(arr, temp_arr,
-                      0, n - 1)
+    temp_arr = [0] * n
+    return _merge_sort(arr, temp_arr, 0, n - 1)
 
 
-def _mergeSort(arr, temp_arr, left, right):
+def _merge_sort(arr, temp_arr, left, right):
     inv_count = 0
     if left < right:
-        mid = (left + right)//2
-        inv_count += _mergeSort(arr, temp_arr,
-                                left, mid)
-        inv_count += _mergeSort(arr, temp_arr,
-                                mid + 1, right)
-        inv_count += merge(arr, temp_arr,
-                           left, mid, right)
+        mid = (left + right) // 2
+        inv_count += _merge_sort(arr, temp_arr, left, mid)
+        inv_count += _merge_sort(arr, temp_arr, mid + 1, right)
+        inv_count += merge(arr, temp_arr, left, mid, right)
     return inv_count
 
 
