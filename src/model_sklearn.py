@@ -74,8 +74,8 @@ class ModelExperimentSklearn:
         X_train, y_train = self.train.get_X_y()
         self.model.fit(X_train, y_train)
 
-    def evaluate(self, metrics={}):
-        X, y = self.test.get_X_y()
+    def evaluate(self, dataset, metrics={}):
+        X, y = self.train.get_X_y() if dataset == 'train' else self.test.get_X_y()
         metrics_values = {}
         y_pred = self.model.predict(X)
         for m in metrics:
