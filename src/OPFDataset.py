@@ -130,7 +130,11 @@ class OPFDataset:
         return DataLoader(tensor_dataset, batch_size=batch_size, shuffle=shuffle)
 
     def scale(self, scaler):
-        self.df[self.features] = scaler.transform(self.df[self.features])
+        try:
+            self.df[self.features] = scaler.transform(self.df[self.features])
+        except ValueError as e:
+            if len(self.df) > 0:
+                raise e
 
     def fit_scaler(self, scaler):
         scaler.fit(self.df[self.features])
@@ -148,6 +152,9 @@ class OPFDataset:
                 self.features.remove(f)
             except ValueError:
                 continue
+
+    def empty(self):
+        self.df = self.df[0:0]
 
     def __getitem__(self, item):
         return self.df[item]
