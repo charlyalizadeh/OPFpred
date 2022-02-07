@@ -37,7 +37,7 @@ class ModelExperimentSklearn:
     def __init__(self, model_name, **kwargs):
         self.model = model_name_dict[model_name](**kwargs)
 
-    def setup_data_per_instance(self, opf=False, opf_category=None,
+    def setup_data(self, opf=False, opf_category=None,
                                 nb_instance_test=1, random_state_split=42, treshold=-0.4):
         dataset = OPFDataset()
         if not opf:
@@ -70,7 +70,7 @@ class ModelExperimentSklearn:
                 if len(self.test[self.test["target"] == i].index) == 0:
                     warnings.warn(f"The test set has no category {i} target")
 
-    def fit_per_instance(self):
+    def fit(self):
         X_train, y_train = self.train.get_X_y()
         self.model.fit(X_train, y_train)
 
@@ -92,7 +92,7 @@ class ModelExperimentSklearnCV:
         self.model_type = model_name_dict[model_name]
         self.model_kwargs = model_kwargs
 
-    def setup_data_per_instance(self, nb_instance_per_split=3, shuffle=False, opf=False, opf_category=None,
+    def setup_data(self, nb_instance_per_split=3, shuffle=False, opf=False, opf_category=None,
                                 random_state=42, treshold=-0.4):
         dataset = OPFDataset()
         if not opf:
