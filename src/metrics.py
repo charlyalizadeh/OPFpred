@@ -1,7 +1,10 @@
 import copy
+import numpy as np
 
 
-def merge_sort(arr):
+def merge_sort(y_true, y_pred):
+    sort_perm = np.argsort(y_pred)
+    arr = y_true[sort_perm]
     n = len(arr)
     arr = copy.deepcopy(arr)
     temp_arr = [0] * n
