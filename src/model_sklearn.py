@@ -1,4 +1,3 @@
-import pandas as pd
 import numpy as np
 
 # Sklearn models
@@ -10,26 +9,13 @@ from sklearn.ensemble import (
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.linear_model import SGDRegressor
 
-# Metrics
-from sklearn.metrics import (
-    r2_score
-)
-from metrics import mergeSort
-
-# Plot
-import matplotlib.pyplot as plt
-import matplotlib
-import seaborn as sns
-
-# Serialization
-from joblib import dump, load
-import json
-
 # Other utilities
 from sklearn.preprocessing import MinMaxScaler
-import copy
 from OPFDataset import OPFDataset
 import random
+from sklearn.base import is_classifier
+import warnings
+from collections import defaultdict
 
 
 model_name_dict = {
@@ -51,26 +37,38 @@ class ModelExperimentSklearn:
     def __init__(self, model_name, **kwargs):
         self.model = model_name_dict[model_name](**kwargs)
 
-    def setup_data(self, opf=False, opf_category=None,
-                   nb_instance_test=1, random_state_split=42,
-                   classification=False, treshold=-0.4):
+    def setup_data_per_instance(self, opf=False, opf_category=None,
+                                nb_instance_test=1, random_state_split=42, treshold=-0.4):
         dataset = OPFDataset()
         if not opf:
             dataset.remove_OPF_features()
         if opf_category is not None:
             dataset = dataset.split_per_pattern(opf_category)
+        if is_classifier(self.model):
+            dataset.categorize(treshold, set_target=True)
+
+        # Split train/test
         random.seed(random_state_split)
         test_instances = random.choices(dataset['instance_name'].unique(), k=nb_instance_test)
         self.test = dataset.split_per_instance(test_instances)
+
+        self.train.remove_non_features()
+        self.test.remove_non_features()
+
+        # Scale
         scaler = MinMaxScaler()
         dataset.fit_scaler(scaler)
         self.test.scale(scaler)
+
         self.train = dataset
-        self.train.remove_non_features()
-        self.test.remove_non_features()
-        if classification:
-            self.train.categorize(treshold)
-            self.test.categorize(treshold)
+
+        # Check for any imbalanced target
+        if is_classifier(self.model):
+            for i in range(2):
+                if self.train[self.train["target"] == i]["target"].sum() == 0:
+                    warnings.warn(f"The train set has no category {i} target")
+                if self.test[self.test["target"] == i]["target"].sum() == 0:
+                    warnings.warn(f"The test set has no category {i} target")
 
     def fit_per_instance(self):
         X_train, y_train = self.train.get_X_y()
@@ -87,3 +85,64 @@ class ModelExperimentSklearn:
             else:
                 metrics_values[m.__name__] = m(y, y_pred)
         return metrics_values
+
+
+class ModelExperimentSklearnCV:
+    def __init__(self, model_name, **model_kwargs):
+        self.model_type = model_name_dict[model_name]
+        self.model_kwargs = model_kwargs
+
+    def setup_data_per_instance(self, nb_instance_per_split=3, shuffle=False, opf=False, opf_category=None,
+                                random_state=42, treshold=-0.4):
+        dataset = OPFDataset()
+        if not opf:
+            dataset.remove_OPF_features()
+        if opf_category is not None:
+            dataset = dataset.split_per_pattern(opf_category)
+        if is_classifier(self.model_type()):
+            dataset.categorize(treshold, set_target=True)
+
+        # Split into folds
+        self.folds = dataset.fold_per_instance(nb_instance_per_split, shuffle, random_state, opf=opf, remove_non_features=True)
+
+        # Scale
+        for train, test in self.folds:
+            scaler = MinMaxScaler()
+            train.fit_scaler(scaler)
+            test.scale(scaler)
+
+        # Check for any imbalanced target
+        if is_classifier(self.model_type()):
+            for fold_i, (train, test) in enumerate(self.folds):
+                for i in range(2):
+                    if len(train[train["target"] == i].index) == 0:
+                        warnings.warn(f"The train set of the fold {fold_i} has no category {i} target")
+                    if len(test[test["target"] == i].index) == 0:
+                        warnings.warn(f"The test set of the fold {fold_i} has no category {i} target")
+
+    def cross_val(self, metrics={}):
+        train_metrics = defaultdict(list)
+        test_metrics = defaultdict(list)
+        for i, (train, test) in enumerate(self.folds):
+            train_metrics['fold_id'].append(i)
+            test_metrics['fold_id'].append(i)
+            X_train, y_train = train.get_X_y()
+            X_test, y_test = test.get_X_y()
+            model = self.model_type(**self.model_kwargs).fit(X_train, y_train)
+            y_train_pred = model.predict(X_train)
+            y_test_pred = model.predict(X_test)
+            train_metrics['y_true'] = y_train
+            train_metrics['y_pred'] = y_train_pred
+            test_metrics['y_true'] = y_test
+            test_metrics['y_pred'] = y_test_pred
+            for metric_func, metric_kwargs in metrics.items():
+                metric_name = metric_func.__name__
+                if metric_name == 'mergeSort':
+                    train_sort_perm = np.argsort(y_train_pred)
+                    test_sort_perm = np.argsort(y_test_pred)
+                    train_metrics[metric_name].append(metric_func(y_train[train_sort_perm].tolist()) / y_train.shape[0])
+                    test_metrics[metric_name].append(metric_func(y_test[test_sort_perm].tolist()) / y_test.shape[0])
+                else:
+                    train_metrics[metric_name].append(metric_func(y_train, y_train_pred))
+                    test_metrics[metric_name].append(metric_func(y_test, y_test_pred))
+        return train_metrics, test_metrics
