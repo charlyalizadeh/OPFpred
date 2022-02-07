@@ -75,15 +75,11 @@ class ModelExperimentSklearn:
         self.model.fit(X_train, y_train)
 
     def evaluate(self, dataset, metrics={}):
-        X, y = self.train.get_X_y() if dataset == 'train' else self.test.get_X_y()
+        X, y_true = self.train.get_X_y() if dataset == 'train' else self.test.get_X_y()
         metrics_values = {}
         y_pred = self.model.predict(X)
-        for m in metrics:
-            if m.__name__ == 'mergeSort':
-                sort_perm = np.argsort(y_pred)
-                metrics_values[m.__name__] = m(y[sort_perm].tolist()) / y.shape[0]
-            else:
-                metrics_values[m.__name__] = m(y, y_pred)
+        for metric_func, metric_kwargs in metrics.items():
+            metrics_values[metric_func.__name__] = metric_func(y_true, y_pred, **metric_kwargs)
         return metrics_values
 
 
@@ -93,7 +89,7 @@ class ModelExperimentSklearnCV:
         self.model_kwargs = model_kwargs
 
     def setup_data(self, nb_instance_per_split=3, shuffle=False, opf=False, opf_category=None,
-                                random_state=42, treshold=-0.4):
+                   random_state=42, treshold=-0.4):
         dataset = OPFDataset()
         if not opf:
             dataset.remove_OPF_features()
@@ -137,12 +133,6 @@ class ModelExperimentSklearnCV:
             test_metrics['y_pred'] = y_test_pred
             for metric_func, metric_kwargs in metrics.items():
                 metric_name = metric_func.__name__
-                if metric_name == 'mergeSort':
-                    train_sort_perm = np.argsort(y_train_pred)
-                    test_sort_perm = np.argsort(y_test_pred)
-                    train_metrics[metric_name].append(metric_func(y_train[train_sort_perm].tolist()) / y_train.shape[0])
-                    test_metrics[metric_name].append(metric_func(y_test[test_sort_perm].tolist()) / y_test.shape[0])
-                else:
-                    train_metrics[metric_name].append(metric_func(y_train, y_train_pred))
-                    test_metrics[metric_name].append(metric_func(y_test, y_test_pred))
+                train_metrics[metric_name].append(metric_func(y_train, y_train_pred, **metric_kwargs))
+                test_metrics[metric_name].append(metric_func(y_test, y_test_pred, **metric_kwargs))
         return train_metrics, test_metrics

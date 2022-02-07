@@ -80,12 +80,8 @@ class ModelExperimentFFNN:
         y_true = y_true.cpu().detach().numpy()
         y_pred = y_pred.cpu().detach().numpy()
         y_pred = np.where(y_pred < 0.5, 0, 1)
-        for m in metrics:
-            if m.__name__ == 'mergeSort':
-                sort_perm = np.argsort(y_pred)
-                metrics_values[m.__name__] = m(y_true[sort_perm].tolist()) / y_true.shape[0]
-            else:
-                metrics_values[m.__name__] = m(y_true, y_pred)
+        for metric_func, metric_kwargs in metrics.items():
+            metrics_values[metric_func.__name__] = metric_func(y_true, y_pred, **metric_kwargs)
         return metrics_values
 
 
@@ -156,12 +152,6 @@ class ModelExperimentFFNNCV:
             test_metrics['y_pred'].append(y_test_pred)
             for metric_func, metric_kwargs in metrics.items():
                 metric_name = metric_func.__name__
-                if metric_name == 'mergeSort':
-                    train_sort_perm = np.argsort(y_train_pred)
-                    test_sort_perm = np.argsort(y_test_pred)
-                    train_metrics[metric_name].append(metric_func(y_train[train_sort_perm].tolist()) / y_train.shape[0])
-                    test_metrics[metric_name].append(metric_func(y_test[test_sort_perm].tolist()) / y_test.shape[0])
-                else:
-                    train_metrics[metric_name].append(metric_func(y_train, y_train_pred))
-                    test_metrics[metric_name].append(metric_func(y_test, y_test_pred))
+                train_metrics[metric_name].append(metric_func(y_train, y_train_pred, **metric_kwargs))
+                test_metrics[metric_name].append(metric_func(y_test, y_test_pred, **metric_kwargs))
         return train_metrics, test_metrics
