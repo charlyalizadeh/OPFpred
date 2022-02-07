@@ -2,6 +2,9 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split, StratifiedKFold
 import random
+import torch
+from torch.utils.data import TensorDataset, DataLoader
+from torch import tensor
 
 
 class OPFDataset:
@@ -92,7 +95,7 @@ class OPFDataset:
         other_columns = self.df.drop(columns, axis=1).columns
         self.df = self.df[columns + other_columns]
 
-    def get_X_y(self, to_numpy=True, one_hot=False, num_class=2):
+    def get_X_y(self, to_numpy=True, one_hot=False):
         X = self.df.drop('target', axis=1)
         y = self.df['target']
         if one_hot:
@@ -101,6 +104,30 @@ class OPFDataset:
             X = X.to_numpy()
             y = y.to_numpy()
         return X, y
+
+    def get_X(self, to_numpy=True):
+        X = self.df.drop('target', axis=1)
+        if to_numpy:
+            X = X.to_numpy()
+        return X
+
+    def get_y(self, to_numpy=True, one_hot=False):
+        y = self.df['target']
+        if one_hot:
+            y = pd.get_dummies(y)
+        if to_numpy:
+            y = y.to_numpy()
+        return y
+
+    def get_torch_loader(self, one_hot=False, batch_size=256, shuffle=False, cuda=False, dtype=torch.float32):
+        X, y = self.get_X_y(True, one_hot)
+        X = tensor(X).to(dtype)
+        y = tensor(y).to(dtype)
+        if cuda:
+            X = X.cuda()
+            y = y.cuda()
+        tensor_dataset = TensorDataset(X, y)
+        return DataLoader(tensor_dataset, batch_size=batch_size, shuffle=shuffle)
 
     def scale(self, scaler):
         self.df[self.features] = scaler.transform(self.df[self.features])
