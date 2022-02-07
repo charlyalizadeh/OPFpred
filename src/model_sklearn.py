@@ -65,9 +65,9 @@ class ModelExperimentSklearn:
         # Check for any imbalanced target
         if is_classifier(self.model):
             for i in range(2):
-                if self.train[self.train["target"] == i]["target"].sum() == 0:
+                if len(self.train[self.train["target"] == i].index) == 0:
                     warnings.warn(f"The train set has no category {i} target")
-                if self.test[self.test["target"] == i]["target"].sum() == 0:
+                if len(self.test[self.test["target"] == i].index) == 0:
                     warnings.warn(f"The test set has no category {i} target")
 
     def fit_per_instance(self):
