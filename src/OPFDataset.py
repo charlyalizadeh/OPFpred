@@ -23,14 +23,19 @@ class OPFDataset:
                              'loads_real.max', 'loads_real.mean', 'loads_real.median',
                              'loads_real.min', 'loads_real.var']
 
-    def categorize(self, treshold=-0.4, per_instance=False):
+    def categorize(self, treshold=-0.4, per_instance=False, set_target=False):
         self.df['category'] = self.df['target'].apply(lambda x: 0 if x > treshold else 1)
         if per_instance:
             self.df['category'] = self.df.apply(lambda row: f'{row["instance_name"]}{row["category"]}', axis=1)
             self.df['category'] = self.df['category'].astype('category')
             self.df['category'] = self.df['category'].cat.codes
+        if set_target:
+            self.df['target'] = self.df['category']
+            self.df.drop('category', axis=1, inplace=True)
 
     def split_per_pattern(self, pattern):
+        if isinstance(pattern, str):
+            raise TypeError(f'Pattern must be an iterable of strings, try ["{pattern}"] instead')
         regex = '|'.join(pattern) if len(pattern) > 1 else pattern[0]
         return OPFDataset(self.df[self.df['instance_name'].str.contains(regex, regex=True)])
 
@@ -58,7 +63,7 @@ class OPFDataset:
             folds = np.concatenate((folds, np.array([[train, test]])), axis=0)
         return folds
 
-    def fold_per_instance(self, nb_instance_per_split, shuffle=False, random_state=None):
+    def fold_per_instance(self, nb_instance_per_split, shuffle=False, random_state=None, opf=True, remove_non_features=True):
         instance_names = self.df['instance_name'].unique()
         if shuffle:
             random.seed(random_state)
@@ -67,8 +72,14 @@ class OPFDataset:
         folds = np.array([]).reshape((-1, 2))
         for i in range(0, nb_instances, nb_instance_per_split):
             test_instances = instance_names[i: i + nb_instance_per_split]
-            test = OPFDataset(self.df[self.df['instance_name'].isin(test_instances)])
             train = OPFDataset(self.df[~self.df['instance_name'].isin(test_instances)])
+            test = OPFDataset(self.df[self.df['instance_name'].isin(test_instances)])
+            if remove_non_features:
+                train.remove_non_features()
+                test.remove_non_features()
+            if not opf:
+                train.remove_OPF_features()
+                test.remove_OPF_features()
             folds = np.concatenate((folds, np.array([[train, test]])), axis=0)
         return folds
 
@@ -109,8 +120,6 @@ class OPFDataset:
                 self.features.remove(f)
             except ValueError:
                 continue
-
-
 
     def __getitem__(self, item):
         return self.df[item]
