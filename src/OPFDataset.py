@@ -63,7 +63,8 @@ class OPFDataset:
             folds = np.concatenate((folds, np.array([[train, test]])), axis=0)
         return folds
 
-    def fold_per_instance(self, nb_instance_per_split, shuffle=False, random_state=None, opf=True, remove_non_features=True):
+    def fold_per_instance(self, nb_instance_per_split, shuffle=False, random_state=None,
+                          opf=True, remove_non_features=True):
         instance_names = self.df['instance_name'].unique()
         if shuffle:
             random.seed(random_state)
@@ -83,7 +84,6 @@ class OPFDataset:
             folds = np.concatenate((folds, np.array([[train, test]])), axis=0)
         return folds
 
-
     def move_columns_end(self, columns):
         other_columns = self.df.drop(columns, axis=1).columns
         self.df = self.df[other_columns + columns]
@@ -92,9 +92,11 @@ class OPFDataset:
         other_columns = self.df.drop(columns, axis=1).columns
         self.df = self.df[columns + other_columns]
 
-    def get_X_y(self, to_numpy=True):
+    def get_X_y(self, to_numpy=True, one_hot=False, num_class=2):
         X = self.df.drop('target', axis=1)
         y = self.df['target']
+        if one_hot:
+            y = pd.get_dummies(y)
         if to_numpy:
             X = X.to_numpy()
             y = y.to_numpy()
@@ -105,7 +107,6 @@ class OPFDataset:
 
     def fit_scaler(self, scaler):
         scaler.fit(self.df[self.features])
-
 
     def remove_non_features(self):
         self._remove_features(self.non_features)
