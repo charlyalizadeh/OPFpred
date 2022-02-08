@@ -143,7 +143,7 @@ class ModelExperimentFFNNCV:
             train_metrics['losses'].append(train_losses.tolist())
             test_metrics['losses'].append(test_losses.tolist())
             y_train, y_train_pred = predict(model, train_loader, to_numpy=True)
-            y_test, y_test_pred = predict(model, test_loader)
+            y_test, y_test_pred = predict(model, test_loader, to_numpy=True)
 
             # Evaluate
             train_metrics['y_true'].append(y_train)
