@@ -38,7 +38,7 @@ class ModelExperimentSklearn:
         self.model = model_name_dict[model_name](**kwargs)
 
     def setup_data(self, opf=False, opf_category=None,
-                                nb_instance_test=1, random_state_split=42, treshold=-0.4):
+                   nb_instance_test=1, random_state_split=42, treshold=-0.4):
         dataset = OPFDataset()
         if not opf:
             dataset.remove_OPF_features()
@@ -52,7 +52,7 @@ class ModelExperimentSklearn:
         test_instances = random.choices(dataset['instance_name'].unique(), k=nb_instance_test)
         self.test = dataset.split_per_instance(test_instances)
 
-        self.train.remove_non_features()
+        dataset.remove_non_features()
         self.test.remove_non_features()
 
         # Scale
