@@ -1,8 +1,10 @@
 import copy
 import numpy as np
+from scipy.stats import pearsonr
+import matplotlib.pyplot as plt
 
 
-def merge_sort(y_true, y_pred):
+def order_merge_sort(y_true, y_pred):
     sort_perm = np.argsort(y_pred)
     arr = y_true[sort_perm]
     n = len(arr)
@@ -47,3 +49,13 @@ def merge(arr, temp_arr, left, mid, right):
     for loop_var in range(left, right + 1):
         arr[loop_var] = temp_arr[loop_var]
     return inv_count
+
+
+def order_pearson_corr(y_true, y_pred):
+    sort_perm_pred = np.argsort(y_pred)
+    y_true = y_true[sort_perm_pred]
+    sort_perm_true = np.argsort(y_true)
+    x = list(range(len(sort_perm_true)))
+    plt.scatter(x, sort_perm_true)
+    plt.show()
+    return pearsonr(x, sort_perm_true)[0]
