@@ -58,6 +58,7 @@ class ModelExperimentSklearn:
         # Scale
         scaler = MinMaxScaler()
         dataset.fit_scaler(scaler)
+        dataset.scale(scaler)
         self.test.scale(scaler)
 
         self.train = dataset
@@ -105,6 +106,7 @@ class ModelExperimentSklearnCV:
         for train, test in self.folds:
             scaler = MinMaxScaler()
             train.fit_scaler(scaler)
+            train.scale(scaler)
             test.scale(scaler)
 
         # Check for any imbalanced target

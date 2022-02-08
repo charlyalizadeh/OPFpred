@@ -50,6 +50,7 @@ class ModelExperimentFFNN:
         # Scale
         scaler = MinMaxScaler()
         dataset.fit_scaler(scaler)
+        dataset.scale(scaler)
         self.test.scale(scaler)
         self.val.scale(scaler)
 
@@ -109,6 +110,7 @@ class ModelExperimentFFNNCV:
         for train_fold, test_fold in self.folds:
             scaler = MinMaxScaler()
             train_fold.fit_scaler(scaler)
+            train_fold.scale(scaler)
             test_fold.scale(scaler)
 
         # Check for any imbalanced target
