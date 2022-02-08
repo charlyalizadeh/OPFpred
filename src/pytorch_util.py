@@ -9,7 +9,9 @@ optimizers = {
 }
 losses = {
     'crossentropy': nn.CrossEntropyLoss,
-    'binary': nn.BCELoss,
+    'binary_crossentropy': nn.BCELoss,
+    'mse': nn.MSELoss,
+    'absolute': nn.L1Loss
 }
 
 
